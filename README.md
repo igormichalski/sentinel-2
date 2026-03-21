@@ -73,6 +73,13 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 | **Extremo Leste** | T20UNU, T20UNV, T20UPA, T20UPU, T20UPV, T20UQA, T20UQB, T20UQV, T21TUM |
 | **Norte/Leste** | T21TUN, T21TVN, T21UUP, T21UUQ, T21UUR, T21UUS, T21UVP, T21UVQ, T21UVR, T21UVS, T21UVT |
 
+## Mapa dos Tiles
+<img width="4200" height="2950" alt="mapa_cobertura_tiles" src="https://github.com/user-attachments/assets/f62d2025-ff29-4b03-8d13-3c8288b41f9c" />
+
+## Foto real
+
+<img width="1246" height="946" alt="image" src="https://github.com/user-attachments/assets/36beb637-847b-48a7-b085-b1500505c16c" />
+
 ---
 
 ## 📈 Estatísticas Atuais do Dataset
