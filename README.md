@@ -11,9 +11,10 @@ Diferente dos dados brutos da ESA, este dataset passou por um pipeline de otimiz
 O conjunto de dados foi gerado através de duas etapas principais:
 
 1.  **Aquisição Automatizada (`satellite_downloader.py`):** Realiza a busca e o download seletivo de produtos `S2MSI2A` via API do *Copernicus Data Space Ecosystem*. O script garante downloads atômicos e validação de integridade por tamanho de arquivo.
-2.  **Recorte e Padronização (`crop_pipeline.py`):** * **Cropping:** As imagens originais são recortadas utilizando a máscara vetorial oficial do Golfo (`mascara_golfo.geojson`).
+2.  **Recorte e Padronização (`crop_pipeline.py`):** * **Cropping:** As imagens originais foram recortadas utilizando uma máscara vetorial manual do Golfo bem próxima a água (`map.geojson`).
     * **Conversão GeoTIFF:** O formato original JPEG2000 (.jp2) é convertido para **GeoTIFF (.tif)** utilizando compressão *Lossless Deflate* e preditor nível 2, garantindo que não haja perda de informação radiométrica.
-    * **Recálculo de Metadados:** As porcentagens de cobertura de nuvens e *NoData* são recalculadas com base exclusivamente na área recortada.
+    * **Recálculo de Metadados:** As porcentagens de cobertura de nuvens e *NoData* foram recalculadas com base exclusivamente na área recortada.
+    * **Geração do Metadados pós-processamento (`cropped_metadata.xml`):** Os dados recalculados e alterados estão no arquivo `cropped_metadata.xml` para manter os aquivos de matadados originais das imagens intactos. 
 
 ---
 
