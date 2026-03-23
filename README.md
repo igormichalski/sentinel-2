@@ -201,8 +201,6 @@ Como o recorte altera a área total da imagem, os metadados originais da ESA dei
 #### 📑 Gerenciamento de Arquivos
 * **XML Original:** O arquivo `MTD_MSIL2A.xml` original da ESA é copiado integralmente para a pasta de saída para manter a rastreabilidade histórica e parâmetros de órbita. Ele permanece **100% inalterado**.
 * **Estrutura Final:** O resultado é um dataset "limpo", onde cada pasta `.SAFE` contém as bandas em GeoTIFF, o XML original da ESA e o novo XML de metadados otimizado para pesquisa no Golfo.
-* **Inventário Geral:** Além dos XMLs individuais, o script consolida os dados no arquivo `processing_inventory.csv` para facilitar a exploração dos dados.
-
 
 **Responsável:** João Pedro Recalcatti and Igor Roberto Michalski 
 **Instituição:** UEMS/BRAZIL  
