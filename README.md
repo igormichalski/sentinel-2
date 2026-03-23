@@ -203,5 +203,9 @@ Como o recorte altera a área total da imagem, os metadados originais da ESA dei
 * **Estrutura Final:** O resultado é um dataset "limpo", onde cada pasta `.SAFE` contém as bandas em GeoTIFF, o XML original da ESA e o novo XML de metadados otimizado para pesquisa no Golfo.
 
 **Responsável:** João Pedro Recalcatti and Igor Roberto Michalski 
+
 **Instituição:** UEMS/BRAZIL  
+
+**Ultima Modificação:** 23 de Março de 2026
+
 **Data de Criação:** 21 de Março de 2026
