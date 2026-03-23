@@ -92,6 +92,74 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 
 ---
 
+## 🚀 Como Executar o Pipeline de Aquisição (`satellite_downloader.py`)
+
+Esta seção descreve os passos necessários para configurar o ambiente e executar o script de download automatizado.
+
+### 1. Pré-requisitos
+O script utiliza a biblioteca **Rich** para interface visual e **Aiohttp/Aiofiles** para operações assíncronas de alta performance.
+
+* **Python**: 3.10 ou superior.
+* **Conta CDSE**: É necessário ter um cadastro no [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/).
+
+### 2. Configuração do Ambiente Virtual (`venv`)
+Recomenda-se o uso de um ambiente virtual para isolar as dependências:
+
+```bash
+# Criar o ambiente virtual
+python3 -m venv venv
+
+# Ativar o ambiente
+# No Linux/macOS:
+source venv/bin/activate
+# No Windows:
+.\venv\Scripts\activate
+
+# Instalar as dependências
+pip install requests aiohttp aiofiles rich
+```
+### 3. Configuração de Credenciais e Variáveis
+Antes de rodar, abra o arquivo `satellite_downloader.py` e ajuste as seguintes constantes no bloco de `CONFIGURATION`:
+
+* **`USERNAME` / `PASSWORD`**: Suas credenciais do portal Copernicus.
+* **`DATE_START` / `DATE_END`**: O intervalo temporal desejado para a busca.
+* **`DOWNLOAD_DIR`**: O caminho absoluto onde os dados serão salvos (Ex: `/meridian/sat_download/sentinel-2/2022`).
+* **`CONCURRENCY_LIMIT`**: Número de downloads simultâneos (padrão: 4).
+
+### 4. Execução em Segundo Plano (Background)
+Em ambientes de servidor, é essencial que o script continue processando mesmo após o fechamento do terminal. Para isso, utilizamos o `nohup`.
+
+#### 4.1 Executando com Logs por Ano
+Para manter a organização, recomendamos redirecionar a saída para um arquivo de log específico para o ano correspondente:
+
+```bash
+# Executa o script ignorando o fechamento do terminal
+# Substitua '2022' pelo ano configurado no seu script
+nohup python3 satellite_downloader.py > log2022.txt 2>&1 &
+```
+#### 4.2 Comandos Úteis de Gerenciamento
+
+| Objetivo | Comando |
+| :--- | :--- |
+| **Acompanhar o progresso** | `tail -f log2022.txt` |
+| **Verificar se ainda está rodando** | `ps aux | grep satellite_downloader.py` |
+| **Parar a execução** | `pkill -f satellite_downloader.py` |
+| **Verificar tamanho do log** | `du -h log2022.txt` |
+
+#### 4.3 Comportamento do Script no Servidor
+O script possui detecção automática de ambiente (`TEXT_MODE`). Quando rodando via `nohup` (sem TTY), ele desativa barras de progresso animadas e gera logs simplificados a cada 5 segundos no arquivo `.txt`, evitando que o log fique sobrecarregado com códigos de cores ou caracteres especiais de terminal.
+
+> **Dica Adicional (Screen):** Se você preferir uma interface visual que possa ser "recuperada" depois, use o Screen:
+> 1. Digite `screen -S download_sat`.
+> 2. Rode o script normalmente: `python3 satellite_downloader.py`.
+> 3. Pressione `Ctrl + A` e depois `D` para desanexar (detach).
+> 4. Para voltar e ver a barra de progresso: `screen -r download_sat`.
+
+### 5. Tratamento de Erros e Validação
+* **Falhas de Download**: Caso ocorram erros de rede ou timeout persistentes após as 20 tentativas configuradas, o script gerará um arquivo chamado `FAILED_[TIMESTAMP].txt` dentro do diretório de download com a lista de caminhos dos arquivos que falharam.
+* **Validação de Integridade**: O script verifica automaticamente o tamanho do arquivo (`Content-Length`) antes de finalizar o download atômico. Se o tamanho baixado não coincidir com o esperado, o arquivo `.part` é descartado e o download é reiniciado.
+
+
 **Responsável:** João Pedro Recalcatti and Igor Roberto Michalski 
 **Instituição:** UEMS/BRAZIL  
 **Data de Criação:** 21 de Março de 2026
