@@ -146,15 +146,6 @@ nohup python3 satellite_downloader.py > log2022.txt 2>&1 &
 | **Parar a execução** | `pkill -f satellite_downloader.py` |
 | **Verificar tamanho do log** | `du -h log2022.txt` |
 
-#### 4.3 Comportamento do Script no Servidor
-O script possui detecção automática de ambiente (`TEXT_MODE`). Quando rodando via `nohup` (sem TTY), ele desativa barras de progresso animadas e gera logs simplificados a cada 5 segundos no arquivo `.txt`, evitando que o log fique sobrecarregado com códigos de cores ou caracteres especiais de terminal.
-
-> **Dica Adicional (Screen):** Se você preferir uma interface visual que possa ser "recuperada" depois, use o Screen:
-> 1. Digite `screen -S download_sat`.
-> 2. Rode o script normalmente: `python3 satellite_downloader.py`.
-> 3. Pressione `Ctrl + A` e depois `D` para desanexar (detach).
-> 4. Para voltar e ver a barra de progresso: `screen -r download_sat`.
-
 ### 5. Tratamento de Erros e Validação
 * **Falhas de Download**: Caso ocorram erros de rede ou timeout persistentes após as 20 tentativas configuradas, o script gerará um arquivo chamado `FAILED_[TIMESTAMP].txt` dentro do diretório de download com a lista de caminhos dos arquivos que falharam.
 * **Validação de Integridade**: O script verifica automaticamente o tamanho do arquivo (`Content-Length`) antes de finalizar o download atômico. Se o tamanho baixado não coincidir com o esperado, o arquivo `.part` é descartado e o download é reiniciado.
