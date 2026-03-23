@@ -89,7 +89,7 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 * **Cenas Totais:** `______`
 * **Período Temporal:** `______` a `______`
 * **Espaço Total em Disco:** `______ GB`
-* **Configuração de Compressão:** GeoTIFF (Deflate, Predictor 2).
+* **Configuração de Compressão:** `GeoTIFF (Deflate, Predictor 2)`
 
 ---
 
