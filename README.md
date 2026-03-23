@@ -20,13 +20,13 @@ O conjunto de dados foi gerado através de duas etapas principais:
 ## 📂 Estrutura de Arquivos e Caminhos
 Os dados estão organizados por Ano e por pastas `.SAFE` individuais para cada cena, mantendo a nomenclatura original para rastreabilidade.
 
-**Caminho Base sugerido:** `/meridian/sat_download/sentinel-2/`
+**Caminho Base:** `/meridian/sat_download/sentinel-2/`
 
 ### Exemplo de Estrutura de Diretórios:
 ```text
 /sentinel-2/
 │
-├── inventario_cropped_teste_formatado.csv    # Catálogo completo (Nuvem, NoData, Tiles)
+├── inventario_cropped_teste_formatado.csv     # Catálogo completo (Nuvem, NoData, Tiles)
 ├── map.geojson                                # Polígono da área de interesse
 │
 └── [ANO]/                                     # Ex: 2016, 2022
@@ -50,15 +50,15 @@ Os dados estão organizados por Ano e por pastas `.SAFE` individuais para cada c
 ## 📋 Especificações das Bandas Extraídas
 As seguintes bandas foram selecionadas por sua relevância técnica para a análise do Golfo:
 
-| Banda | Descrição | Resolução Original | Aplicação Principal |
-| :--- | :--- | :--- | :--- |
-| **B01** | Coastal Aerosol | 60m | Correção atmosférica e aerossóis |
-| **B02, B03, B04**| Blue, Green, Red | 10m | Imagem visível (RGB) e turbidez |
-| **B08** | NIR | 10m | Detecção de gelo e biomassa |
-| **B09** | Water Vapor | 60m | Detecção de nuvens cirrus e vapor |
-| **WVP** | **Water Vapor** | **10m** | Coluna de vapor d'água de alta resolução |
-| **AOT** | **Aerosol Optical Thickness** | **10m** | Profundidade óptica de aerossóis |
-| **SCL** | Scene Classification | 20m | Máscara de nuvens, neve e sombras |
+| Banda | Descrição | Resolução Original |
+| :--- | :--- | :--- |
+| **B01** | Coastal Aerosol | 60m |
+| **B02, B03, B04**| Blue, Green, Red | 10m |
+| **B08** | NIR | 10m |
+| **B09** | Water Vapor | 60m |
+| **WVP** | **Water Vapor** | **10m** |
+| **AOT** | **Aerosol Optical Thickness** | **10m** |
+| **SCL** | Scene Classification | 20m |
 
 ---
 
@@ -67,10 +67,10 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 
 | Zona | Tiles Disponíveis |
 | :--- | :--- |
-| **Oeste** | T19UDP, T19UDQ, T19UEP, T19UEQ, T19UFP, T19UFQ, T19UFR |
-| **Central** | T19UGP, T19UGQ, T19UGR, T20TMR, T20TMS, T20TMT, T20ULA, T20ULU, T20ULV |
-| **Leste** | T20TNR, T20TNS, T20TNT, T20TPR, T20TPS, T20TPT, T20UMA, T20UMU, T20UMV, T20UNA |
-| **Extremo Leste** | T20UNU, T20UNV, T20UPA, T20UPU, T20UPV, T20UQA, T20UQB, T20UQV, T21TUM |
+| **Oeste** | T19TGM, T19TGN, T19UDP, T19UDQ, T19UEP, T19UEQ, T19UFP, T19UFQ, T19UFR |
+| **Central** | T19UGP, T19UGQ, T19UGR, T20TLR, T20TLS, T20TLT, T20TMR, T20TMS, T20TMT, T20ULA, T20ULU, T20ULV |
+| **Leste** | T20TNR, T20TNS, T20TNT, T20TPR, T20TPS, T20TPT, T20TQS, T20TQT, T20UMA, T20UMU, T20UMV, T20UNA |
+| **Extremo Leste** | T20UNU, T20UNV, T20UPA, T20UPU, T20UPV, T20UQA, T20UQB, T20UQU, T20UQV, T21TUM |
 | **Norte/Leste** | T21TUN, T21TVN, T21UUP, T21UUQ, T21UUR, T21UUS, T21UVP, T21UVQ, T21UVR, T21UVS, T21UVT |
 
 ## Mapa dos Tiles
@@ -85,6 +85,7 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 ## 📈 Estatísticas Atuais do Dataset
 *Preencha as informações abaixo após a execução final do pipeline:*
 
+* **Quantidade de Tiles:** `54`
 * **Cenas Totais:** `______`
 * **Período Temporal:** `______` a `______`
 * **Espaço Total em Disco:** `______ GB`
