@@ -87,7 +87,7 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 O conjunto de dados foi gerado através de duas etapas principais:
 
 1.  **Aquisição Automatizada (`satellite_downloader.py`):** Realiza a busca e o download seletivo de produtos `S2MSI2A` via API do *Copernicus Data Space Ecosystem*. O script garante downloads atômicos e validação de integridade por tamanho de arquivo.
-2.  **Recorte e Padronização (`crop_pipeline.py`):** * **Cropping:** As imagens originais foram recortadas utilizando uma máscara vetorial feita de maneira manual bem próxima a água (`map.geojson`).
+2.  **Recorte e Padronização (`gulf_pipeline.py`):** * **Cropping:** As imagens originais foram recortadas utilizando uma máscara vetorial feita de maneira manual bem próxima a água (`map.geojson`).
     * **Conversão GeoTIFF:** O formato original JPEG2000 (.jp2) é convertido para **GeoTIFF (.tif)** utilizando compressão *Lossless Deflate* e preditor nível 2, garantindo que não haja perda de informação radiométrica.
     * **Recálculo de Metadados:** As porcentagens de cobertura de nuvens e *NoData* foram recalculadas com base exclusivamente na área recortada.
     * **Geração do Metadados pós-processamento (`cropped_metadata.xml`):** Os dados recalculados e alterados estão no arquivo `cropped_metadata.xml` para manter os aquivos de matadados originais das imagens intactos.
@@ -153,6 +153,55 @@ nohup python3 satellite_downloader.py > log2022.txt 2>&1 &
 ### 5. Tratamento de Erros e Validação
 * **Falhas de Download**: Caso ocorram erros de rede ou timeout persistentes após as 20 tentativas configuradas, o script gerará um arquivo chamado `FAILED_[TIMESTAMP].txt` dentro do diretório de download com a lista de caminhos dos arquivos que falharam.
 * **Validação de Integridade**: O script verifica automaticamente o tamanho do arquivo (`Content-Length`) antes de finalizar o download atômico. Se o tamanho baixado não coincidir com o esperado, o arquivo `.part` é descartado e o download é reiniciado.
+
+---
+
+## 🛰️ Pipeline de Processamento de Dados (`gulf_pipeline.py`)
+
+Após a aquisição das imagens, o `gulf_pipeline.py` realiza a padronização e otimização dos dados para o Golfo de St. Lawrence.
+
+### 1. Preparação do Ambiente
+O pipeline depende de bibliotecas geoespaciais específicas (`rasterio`, `geopandas`, `shapely`). Certifique-se de que seu ambiente virtual está ativo:
+
+```bash
+# Instalar dependências do pipeline
+pip install rasterio geopandas shapely numpy pandas
+```
+
+### 2. Configuração e Execução do Pipeline
+No bloco `CONFIGURATION` do arquivo `gulf_pipeline.py`, ajuste os seguintes parâmetros antes de iniciar:
+
+* **`INPUT_DIR`**: Pasta contendo os produtos `.SAFE` originais (baixados pelo script anterior).
+* **`OUTPUT_DIR`**: Local onde as imagens recortadas e otimizadas serão salvas.
+* **`MASK_PATH`**: Caminho para o arquivo `map.geojson`.
+
+**Para rodar em segundo plano (Background):**
+```bash
+# O log de processamento será salvo em pipeline_processing.log
+nohup python3 gulf_pipeline.py > pipeline_processing.log 2>&1 &
+```
+### 3. Detalhes Técnicos do Processamento
+
+#### ✂️ Recorte Espacial (Cropping)
+O script utiliza a máscara vetorial oficial do Golfo para realizar um **Clip geométrico** em todas as bandas. Isso remove áreas de terra desnecessárias e foca o processamento apenas na massa de água e zonas costeiras de interesse, reduzindo drasticamente o volume de dados e o ruído para modelos de aprendizado de máquina.
+
+#### 💾 Novo Formato: GeoTIFF com Compressão *Lossless*
+As imagens originais são convertidas de JPEG2000 (.jp2) para **GeoTIFF (.tif)**:
+* **Performance:** O acesso aos pixels é otimizado para leitura em blocos (tiled), permitindo carregamento rápido.
+* **Compatibilidade:** Formato padrão para as principais bibliotecas de visão computacional (PyTorch, TensorFlow) e SIG.
+* **Compressão:** Utilizamos o algoritmo `Deflate` com `Predictor 2`. Esta é uma compressão **sem perda de dados** (lossless) que garante a integridade radiométrica total enquanto economiza espaço em disco.
+
+#### 📊 O Novo XML de Metadados (`cropped_metadata.xml`)
+Como o recorte altera a área total da imagem, os metadados originais da ESA deixam de representar a realidade estatística da cena. Por isso, o pipeline gera um **Novo XML customizado** para cada cena processada:
+
+* **Cloud Cover (Recalculado):** A porcentagem de nuvens é recalculada analisando a banda **SCL (Scene Classification)**. Somente pixels classificados como nuvens (classes 8, 9 e 10) que estão **dentro da máscara do Golfo** são contabilizados. Isso permite filtrar cenas pela qualidade real no alvo, ignorando nuvens que estejam apenas sobre a terra.
+* **NoData Detection:** Identifica pixels vazios ou fora da geometria da máscara. Isso é crucial para que os modelos de ML ignorem essas regiões e não aprendam padrões sobre o "espaço vazio".
+* **Bounding Box Real:** Atualiza as coordenadas geográficas extremas baseadas estritamente nos limites do recorte efetuado.
+
+#### 📑 Gerenciamento de Arquivos
+* **XML Original:** O arquivo `MTD_MSIL2A.xml` original da ESA é copiado integralmente para a pasta de saída para manter a rastreabilidade histórica e parâmetros de órbita. Ele permanece **100% inalterado**.
+* **Estrutura Final:** O resultado é um dataset "limpo", onde cada pasta `.SAFE` contém as bandas em GeoTIFF, o XML original da ESA e o novo XML de metadados otimizado para pesquisa no Golfo.
+* **Inventário Geral:** Além dos XMLs individuais, o script consolida os dados no arquivo `processing_inventory.csv` para facilitar a exploração dos dados.
 
 
 **Responsável:** João Pedro Recalcatti and Igor Roberto Michalski 
