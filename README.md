@@ -1,13 +1,13 @@
 # Dataset de Imagens de Satélite: Golfo de St. Lawrence (Sentinel-2)
 
-## 📌 Visão Geral
-Este dataset consiste em imagens multiespectrais provenientes do satélite **Sentinel-2 (Level-2A)**, processadas especificamente para a região do **Golfo de St. Lawrence, Canadá**. O objetivo deste conjunto de dados é fornecer insumos de alta qualidade para pesquisas em predição climática e modelos de Machine Learning.
+##  Visão Geral
+Este dataset consiste em imagens multiespectrais provenientes do satélite **Sentinel-2 (Level-2A)**, processadas especificamente para a região do **Golfo de St. Lawrence, Canadá**. O objetivo deste conjunto de dados é fornecer dados de alta qualidade para pesquisas em predição climática e modelos de Machine Learning.
 
 Diferente dos dados brutos da ESA, este dataset passou por um pipeline de otimização que realiza o recorte espacial (cropping) e a conversão de formato para maximizar a performance de processamento.
 
 ---
 
-## 📂 Estrutura de Arquivos e Caminhos
+##  Estrutura de Arquivos e Caminhos
 Os dados estão organizados por Ano e por pastas `.SAFE` individuais para cada cena, mantendo a nomenclatura original para rastreabilidade.
 
 **Caminho Base:** `/meridian/sat_download/sentinel-2/`
@@ -37,8 +37,8 @@ Os dados estão organizados por Ano e por pastas `.SAFE` individuais para cada c
 ```
 ---
 
-## 📋 Especificações das Bandas Extraídas
-As seguintes bandas foram selecionadas por sua relevância técnica para a análise do Golfo:
+##  Especificações das Bandas Extraídas
+As seguintes bandas foram selecionadas para serem baixadas:
 
 | Banda | Descrição | Resolução Original |
 | :--- | :--- | :--- |
@@ -52,7 +52,7 @@ As seguintes bandas foram selecionadas por sua relevância técnica para a anál
 
 ---
 
-## 🗺️ Mapa de Cobertura (Tiles Processados)
+##  Mapa de Cobertura (Tiles Processados)
 Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golfo de St. Lawrence:
 
 | Zona | Tiles Disponíveis |
@@ -72,7 +72,7 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 
 ---
 
-## 📈 Estatísticas Atuais do Dataset
+##  Estatísticas Atuais do Dataset
 *Preencha as informações abaixo após a execução final do pipeline:*
 
 * **Quantidade de Tiles:** `54`
@@ -83,7 +83,7 @@ Abaixo estão os Tiles Sentinel-2 que compõem a cobertura deste dataset no Golf
 
 ---
 
-## 🛠️ Pipeline de Processamento
+##  Pipeline de Processamento
 O conjunto de dados foi gerado através de duas etapas principais:
 
 1.  **Aquisição Automatizada (`satellite_downloader.py`):** Realiza a busca e o download seletivo de produtos `S2MSI2A` via API do *Copernicus Data Space Ecosystem*. O script garante downloads atômicos e validação de integridade por tamanho de arquivo.
@@ -96,17 +96,17 @@ O conjunto de dados foi gerado através de duas etapas principais:
 ---
 
 
-## 🚀 Como Executar o Pipeline de Aquisição (`satellite_downloader.py`)
+## 1. Pipeline de Aquisição (`satellite_downloader.py`)
 
 Esta seção descreve os passos necessários para configurar o ambiente e executar o script de download automatizado.
 
-### 1. Pré-requisitos
+### 1.1 Pré-requisitos
 O script utiliza a biblioteca **Rich** para interface visual e **Aiohttp/Aiofiles** para operações assíncronas de alta performance.
 
 * **Python**: 3.10 ou superior.
 * **Conta CDSE**: É necessário ter um cadastro no [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/).
 
-### 2. Configuração do Ambiente Virtual (`venv`)
+### 1.2 Configuração do Ambiente Virtual (`venv`)
 Recomenda-se o uso de um ambiente virtual para isolar as dependências:
 
 ```bash
@@ -122,45 +122,45 @@ source venv/bin/activate
 # Instalar as dependências
 pip install requests aiohttp aiofiles rich
 ```
-### 3. Configuração de Credenciais e Variáveis
+### 1.3 Configuração de Credenciais e Variáveis
 Antes de rodar, abra o arquivo `satellite_downloader.py` e ajuste as seguintes constantes no bloco de `CONFIGURATION`:
 
-* **`USERNAME` / `PASSWORD`**: Suas credenciais do portal Copernicus.
+* **`USERNAME` / `PASSWORD`**: Credenciais do portal Copernicus.
 * **`DATE_START` / `DATE_END`**: O intervalo temporal desejado para a busca.
-* **`DOWNLOAD_DIR`**: O caminho absoluto onde os dados serão salvos (Ex: `/meridian/sat_download/sentinel-2/2022`).
+* **`DOWNLOAD_DIR`**: O caminho absoluto onde os dados serão salvos (Ex: `/meridian/sat_download/sentinel-2/2025`).
 * **`CONCURRENCY_LIMIT`**: Número de downloads simultâneos (padrão: 4).
 
-### 4. Execução em Segundo Plano (Background)
+### 1.4 Execução em Segundo Plano (Background)
 Em ambientes de servidor, é essencial que o script continue processando mesmo após o fechamento do terminal. Para isso, utilizamos o `nohup`.
 
-#### 4.1 Executando com Logs por Ano
+####  Executando com Logs por Ano
 Para manter a organização, recomendamos redirecionar a saída para um arquivo de log específico para o ano correspondente:
 
 ```bash
 # Executa o script ignorando o fechamento do terminal
-# Substitua '2022' pelo ano configurado no seu script
-nohup python3 satellite_downloader.py > log2022.txt 2>&1 &
+# Substitua '2025' pelo ano configurado no seu script
+nohup python3 satellite_downloader.py > log2025.txt 2>&1 &
 ```
-#### 4.2 Comandos Úteis de Gerenciamento
+#### 1.5 Comandos Úteis de Gerenciamento
 
 | Objetivo | Comando |
 | :--- | :--- |
-| **Acompanhar o progresso** | `tail -f log2022.txt` |
+| **Acompanhar o progresso** | `tail -f log2025.txt` |
 | **Verificar se ainda está rodando** | `ps aux | grep satellite_downloader.py` |
 | **Parar a execução** | `pkill -f satellite_downloader.py` |
-| **Verificar tamanho do log** | `du -h log2022.txt` |
+| **Verificar tamanho do log** | `du -h log2025.txt` |
 
-### 5. Tratamento de Erros e Validação
+### 1.6 Tratamento de Erros e Validação
 * **Falhas de Download**: Caso ocorram erros de rede ou timeout persistentes após as 20 tentativas configuradas, o script gerará um arquivo chamado `FAILED_[TIMESTAMP].txt` dentro do diretório de download com a lista de caminhos dos arquivos que falharam.
 * **Validação de Integridade**: O script verifica automaticamente o tamanho do arquivo (`Content-Length`) antes de finalizar o download atômico. Se o tamanho baixado não coincidir com o esperado, o arquivo `.part` é descartado e o download é reiniciado.
 
 ---
 
-## 🛰️ Pipeline de Processamento de Dados (`gulf_pipeline.py`)
+## 2. Pipeline de Processamento de Dados (`gulf_pipeline.py`)
 
 Após a aquisição das imagens, o `gulf_pipeline.py` realiza a padronização e otimização dos dados para o Golfo de St. Lawrence.
 
-### 1. Preparação do Ambiente
+### 2.1 Preparação do Ambiente
 O pipeline depende de bibliotecas geoespaciais específicas (`rasterio`, `geopandas`, `shapely`). Certifique-se de que seu ambiente virtual está ativo:
 
 ```bash
@@ -168,7 +168,7 @@ O pipeline depende de bibliotecas geoespaciais específicas (`rasterio`, `geopan
 pip install rasterio geopandas shapely numpy pandas
 ```
 
-### 2. Configuração e Execução do Pipeline
+### 2.2 Configuração e Execução do Pipeline
 No bloco `CONFIGURATION` do arquivo `gulf_pipeline.py`, ajuste os seguintes parâmetros antes de iniciar:
 
 * **`INPUT_DIR`**: Pasta contendo os produtos `.SAFE` originais (baixados pelo script anterior).
@@ -180,25 +180,25 @@ No bloco `CONFIGURATION` do arquivo `gulf_pipeline.py`, ajuste os seguintes par�
 # O log de processamento será salvo em pipeline_processing.log
 nohup python3 gulf_pipeline.py > pipeline_processing.log 2>&1 &
 ```
-### 3. Detalhes Técnicos do Processamento
+### 2.3 Detalhes Técnicos do Processamento
 
-#### ✂️ Recorte Espacial (Cropping)
-O script utiliza a máscara vetorial oficial do Golfo para realizar um **Clip geométrico** em todas as bandas. Isso remove áreas de terra desnecessárias e foca o processamento apenas na massa de água e zonas costeiras de interesse, reduzindo drasticamente o volume de dados e o ruído para modelos de aprendizado de máquina.
+####  Recorte Espacial (Cropping)
+O script utiliza uma máscara vetorial do Golfo para realizar um **Clip geométrico** em todas as bandas (`map.geojson`). Isso remove áreas de terra desnecessárias e foca o processamento apenas na massa de água e zonas costeiras de interesse, reduzindo drasticamente o volume de dados.
 
-#### 💾 Novo Formato: GeoTIFF com Compressão *Lossless*
+####  Novo Formato: GeoTIFF com Compressão *Lossless*
 As imagens originais são convertidas de JPEG2000 (.jp2) para **GeoTIFF (.tif)**:
 * **Performance:** O acesso aos pixels é otimizado para leitura em blocos (tiled), permitindo carregamento rápido.
 * **Compatibilidade:** Formato padrão para as principais bibliotecas de visão computacional (PyTorch, TensorFlow) e SIG.
 * **Compressão:** Utilizamos o algoritmo `Deflate` com `Predictor 2`. Esta é uma compressão **sem perda de dados** (lossless) que garante a integridade radiométrica total enquanto economiza espaço em disco.
 
-#### 📊 O Novo XML de Metadados (`cropped_metadata.xml`)
+####  O Novo XML de Metadados (`cropped_metadata.xml`)
 Como o recorte altera a área total da imagem, os metadados originais da ESA deixam de representar a realidade estatística da cena. Por isso, o pipeline gera um **Novo XML customizado** para cada cena processada:
 
 * **Cloud Cover (Recalculado):** A porcentagem de nuvens é recalculada analisando a banda **SCL (Scene Classification)**. Somente pixels classificados como nuvens (classes 8, 9 e 10) que estão **dentro da máscara do Golfo** são contabilizados. Isso permite filtrar cenas pela qualidade real no alvo, ignorando nuvens que estejam apenas sobre a terra.
 * **NoData Detection:** Identifica pixels vazios ou fora da geometria da máscara. Isso é crucial para que os modelos de ML ignorem essas regiões e não aprendam padrões sobre o "espaço vazio".
 * **Bounding Box Real:** Atualiza as coordenadas geográficas extremas baseadas estritamente nos limites do recorte efetuado.
 
-#### 📑 Gerenciamento de Arquivos
+####  Gerenciamento de Arquivos
 * **XML Original:** O arquivo `MTD_MSIL2A.xml` original da ESA é copiado integralmente para a pasta de saída para manter a rastreabilidade histórica e parâmetros de órbita. Ele permanece **100% inalterado**.
 * **Estrutura Final:** O resultado é um dataset "limpo", onde cada pasta `.SAFE` contém as bandas em GeoTIFF, o XML original da ESA e o novo XML de metadados otimizado para pesquisa no Golfo.
 
