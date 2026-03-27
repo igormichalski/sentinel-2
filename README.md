@@ -106,19 +106,9 @@ O script utiliza a biblioteca **Rich** para interface visual e **Aiohttp/Aiofile
 * **Python**: 3.10 ou superior.
 * **Conta CDSE**: É necessário ter um cadastro no [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/).
 
-### 1.2 Configuração do Ambiente Virtual (`venv`)
-Recomenda-se o uso de um ambiente virtual para isolar as dependências:
+### 1.2 Configuração das Dependências
 
 ```bash
-# Criar o ambiente virtual
-python3 -m venv venv
-
-# Ativar o ambiente
-# No Linux/macOS:
-source venv/bin/activate
-# No Windows:
-.\venv\Scripts\activate
-
 # Instalar as dependências
 pip install requests aiohttp aiofiles rich
 ```
@@ -130,27 +120,7 @@ Antes de rodar, abra o arquivo `satellite_downloader.py` e ajuste as seguintes c
 * **`DOWNLOAD_DIR`**: O caminho absoluto onde os dados serão salvos (Ex: `/meridian/sat_download/sentinel-2/2025`).
 * **`CONCURRENCY_LIMIT`**: Número de downloads simultâneos (padrão: 4).
 
-### 1.4 Execução em Segundo Plano (Background)
-Em ambientes de servidor, é essencial que o script continue processando mesmo após o fechamento do terminal. Para isso, utilizamos o `nohup`.
-
-####  Executando com Logs por Ano
-Para manter a organização, recomendamos redirecionar a saída para um arquivo de log específico para o ano correspondente:
-
-```bash
-# Executa o script ignorando o fechamento do terminal
-# Substitua '2025' pelo ano configurado no seu script
-nohup python3 satellite_downloader.py > log2025.txt 2>&1 &
-```
-#### 1.5 Comandos Úteis de Gerenciamento
-
-| Objetivo | Comando |
-| :--- | :--- |
-| **Acompanhar o progresso** | `tail -f log2025.txt` |
-| **Verificar se ainda está rodando** | `ps aux | grep satellite_downloader.py` |
-| **Parar a execução** | `pkill -f satellite_downloader.py` |
-| **Verificar tamanho do log** | `du -h log2025.txt` |
-
-### 1.6 Tratamento de Erros e Validação
+### 1.4 Tratamento de Erros e Validação
 * **Falhas de Download**: Caso ocorram erros de rede ou timeout persistentes após as 20 tentativas configuradas, o script gerará um arquivo chamado `FAILED_[TIMESTAMP].txt` dentro do diretório de download com a lista de caminhos dos arquivos que falharam.
 * **Validação de Integridade**: O script verifica automaticamente o tamanho do arquivo (`Content-Length`) antes de finalizar o download atômico. Se o tamanho baixado não coincidir com o esperado, o arquivo `.part` é descartado e o download é reiniciado.
 
@@ -160,8 +130,8 @@ nohup python3 satellite_downloader.py > log2025.txt 2>&1 &
 
 Após a aquisição das imagens, o `gulf_pipeline.py` realiza a padronização e otimização dos dados para o Golfo de St. Lawrence.
 
-### 2.1 Preparação do Ambiente
-O pipeline depende de bibliotecas geoespaciais específicas (`rasterio`, `geopandas`, `shapely`). Certifique-se de que seu ambiente virtual está ativo:
+### 2.1 Configuração das Dependências
+O pipeline depende de bibliotecas geoespaciais específicas (`rasterio`, `geopandas`, `shapely`). 
 
 ```bash
 # Instalar dependências do pipeline
@@ -175,11 +145,6 @@ No bloco `CONFIGURATION` do arquivo `gulf_pipeline.py`, ajuste os seguintes par�
 * **`OUTPUT_DIR`**: Local onde as imagens recortadas e otimizadas serão salvas.
 * **`MASK_PATH`**: Caminho para o arquivo `map.geojson`.
 
-**Para rodar em segundo plano (Background):**
-```bash
-# O log de processamento será salvo em pipeline_processing.log
-nohup python3 gulf_pipeline.py > pipeline_processing.log 2>&1 &
-```
 ### 2.3 Detalhes Técnicos do Processamento
 
 ####  Recorte Espacial (Cropping)
@@ -201,11 +166,3 @@ Como o recorte altera a área total da imagem, os metadados originais da ESA dei
 ####  Gerenciamento de Arquivos
 * **XML Original:** O arquivo `MTD_MSIL2A.xml` original da ESA é copiado integralmente para a pasta de saída para manter a rastreabilidade histórica e parâmetros de órbita. Ele permanece **100% inalterado**.
 * **Estrutura Final:** O resultado é um dataset "limpo", onde cada pasta `.SAFE` contém as bandas em GeoTIFF, o XML original da ESA e o novo XML de metadados otimizado para pesquisa no Golfo.
-
-**Responsável:** João Pedro Recalcatti and Igor Roberto Michalski 
-
-**Instituição:** UEMS/BRAZIL  
-
-**Ultima Modificação:** 23 de Março de 2026
-
-**Data de Criação:** 21 de Março de 2026
