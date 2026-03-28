@@ -16,7 +16,7 @@ Data is organized by Year and by individual `.SAFE` folders for each scene, main
 ```text
 /sentinel-2/
 │
-├── inventario_cropped_teste_formatado.csv     # Full catalog (Cloud, NoData, Tiles)
+├── gulf_catalog.csv     # Full catalog (Cloud, NoData, Tiles)
 ├── map.geojson                                # Area of interest polygon
 │
 └── [YEAR]/                                    # Ex: 2016, 2022
