@@ -10,7 +10,7 @@ Unlike raw ESA data, this dataset went through an optimization pipeline that per
 ## Products
 
 Dashboard - Link
-Classe - Link
+Wrapper - Link
 Classification Model - Link
 
 ---
