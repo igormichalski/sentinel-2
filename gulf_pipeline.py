@@ -2,9 +2,64 @@
 # -*- coding: utf-8 -*-
 
 """
+==============================================================================
+2. Data Processing Pipeline
+==============================================================================
+After image acquisition, gulf_pipeline.py performs the standardization and 
+optimization of data for the Gulf of St. Lawrence.
+
+2.1 Dependency Setup
+--------------------
+The pipeline depends on specific geospatial libraries (rasterio, geopandas, shapely).
+
+# Install pipeline dependencies
+pip install rasterio geopandas shapely numpy pandas
+
+2.2 Pipeline Configuration and Execution
+---------------------------------------
+In the CONFIGURATION block below, adjust the following parameters before starting:
+- INPUT_DIR: Folder containing the original .SAFE products (downloaded by the 
+  previous script).
+- OUTPUT_DIR: Location where the cropped and optimized images will be saved.
+- MASK_PATH: Path to the map.geojson file.
+
+2.3 Technical Processing Details
+--------------------------------
+Spatial Cropping:
+The script uses a Gulf vector mask to perform a geometric clip on all bands 
+(map.geojson). This removes unnecessary land areas and focuses processing 
+exclusively on the water body and coastal zones of interest, drastically 
+reducing data volume.
+
+New Format: GeoTIFF with Lossless Compression:
+Original images are converted from JPEG2000 (.jp2) to GeoTIFF (.tif):
+- Performance: Pixel access is optimized for block-based reading (tiled).
+- Compatibility: Standard format for libraries like PyTorch, TensorFlow, and GIS.
+- Compression: Uses Deflate algorithm with Predictor 2. This lossless 
+  compression guarantees full radiometric integrity while saving disk space.
+
+The New Metadata XML (cropped_metadata.xml):
+Since cropping changes the total image area, the pipeline generates a new 
+custom XML for each processed scene:
+- Cloud Cover (Recalculated): Cloud percentage is recalculated by analyzing the 
+  SCL (Scene Classification) band. Only pixels classified as clouds 
+  (classes 8, 9, and 10) within the Gulf mask are counted.
+- NoData Detection: Identifies empty pixels or those outside the mask geometry 
+  so ML models ignore these regions.
+- Real Bounding Box: Updates the extreme geographic coordinates based strictly 
+  on the boundaries of the performed crop.
+
+File Management:
+- Original XML: The original ESA MTD_MSIL2A.xml file is copied in its entirety 
+  to the output folder to maintain historical traceability and orbital 
+  parameters. It remains 100% unmodified.
+- Final Structure: The result is a "clean" dataset where each .SAFE folder 
+  contains GeoTIFF bands, the original ESA XML, and the new optimized metadata.
+
+==============================================================================
 Gulf of St. Lawrence Satellite Processing Pipeline.
-Performs automated cropping, format conversion (JP2 to GeoTIFF), 
-and metadata recalculation for Sentinel-2 Level-2A imagery.
+Standardization and optimization for Sentinel-2 Level-2A imagery.
+==============================================================================
 """
 
 import os
