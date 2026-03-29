@@ -7,6 +7,24 @@ Unlike raw ESA data, this dataset went through an optimization pipeline that per
 
 ---
 
+##  Extracted Band Specifications
+The following bands were selected for download:
+
+| Band | Description | Original Resolution |
+| :--- | :--- | :--- |
+| **B01** | Coastal Aerosol | 60m |
+| **B02, B03, B04**| Blue, Green, Red | 10m |
+| **B08** | NIR | 10m |
+| **B09** | Water Vapor | 60m |
+| **WVP** | **Water Vapor** | **10m** |
+| **AOT** | **Aerosol Optical Thickness** | **10m** |
+| **SCL** | Scene Classification | 20m |
+
+
+
+---
+
+
 ##  File Structure and Paths
 Data is organized by Year and by individual `.SAFE` folders for each scene, maintaining the original naming convention for traceability.
 
@@ -37,33 +55,15 @@ Data is organized by Year and by individual `.SAFE` folders for each scene, main
 ```
 ---
 
-
-##  Extracted Band Specifications
-The following bands were selected for download:
-
-| Band | Description | Original Resolution |
-| :--- | :--- | :--- |
-| **B01** | Coastal Aerosol | 60m |
-| **B02, B03, B04**| Blue, Green, Red | 10m |
-| **B08** | NIR | 10m |
-| **B09** | Water Vapor | 60m |
-| **WVP** | **Water Vapor** | **10m** |
-| **AOT** | **Aerosol Optical Thickness** | **10m** |
-| **SCL** | Scene Classification | 20m |
-
----
-
 ##  Coverage Map (Processed Tiles)
-Below are the Sentinel-2 Tiles that make up the coverage of this dataset over the Gulf of St. Lawrence:
+Below are the Sentinel-2 Tiles that make up the coverage of this dataset over the Gulf of St. Lawrence, grouped by basins and UTM zones:
 
-| Zone | Available Tiles |
+| Region | Available Tiles |
 | :--- | :--- |
-| **West** | T19TGM, T19TGN, T19UDP, T19UDQ, T19UEP, T19UEQ, T19UFP, T19UFQ, T19UFR |
-| **Central** | T19UGP, T19UGQ, T19UGR, T20TLR, T20TLS, T20TLT, T20TMR, T20TMS, T20TMT, T20ULA, T20ULU, T20ULV |
-| **East** | T20TNR, T20TNS, T20TNT, T20TPR, T20TPS, T20TPT, T20TQS, T20TQT, T20UMA, T20UMU, T20UMV, T20UNA |
-| **Far East** | T20UNU, T20UNV, T20UPA, T20UPU, T20UPV, T20UQA, T20UQB, T20UQU, T20UQV, T21TUM |
-| **North/East** | T21TUN, T21TVN, T21UUP, T21UUQ, T21UUR, T21UUS, T21UVP, T21UVQ, T21UVR, T21UVS, T21UVT |
-
+| **Gaspé Peninsula & Estuary (West - Zone 19)** | T19TGM, T19TGN, T19UDP, T19UDQ, T19UEP, T19UEQ, T19UFP, T19UFQ, T19UFR, T19UGP, T19UGQ, T19UGR |
+| **Southern Sector & Maritime Provinces (NB, PEI, NS)** | T20TLR, T20TLS, T20TLT, T20TMR, T20TMS, T20TMT, T20TNR, T20TNS, T20TNT, T20TPR, T20TPS, T20TPT, T20TQS, T20TQT |
+| **Anticosti Island & Central Gulf Sector** | T20ULA, T20ULU, T20ULV, T20UMA, T20UMU, T20UMV, T20UNA, T20UNU, T20UNV, T20UPA, T20UPU, T20UPV, T20UQA, T20UQB, T20UQU, T20UQV |
+| **Newfoundland & Strait of Belle Isle (East - Zone 21)** | T21TUM, T21TUN, T21TVN, T21UUP, T21UUQ, T21UUR, T21UUS, T21UVP, T21UVQ, T21UVR, T21UVS, T21UVT |
 
 ## Tile Map
 <img width="4200" height="2950" alt="mapa_cobertura_tiles" src="https://github.com/user-attachments/assets/f62d2025-ff29-4b03-8d13-3c8288b41f9c" />
