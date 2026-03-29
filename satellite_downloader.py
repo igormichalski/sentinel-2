@@ -2,9 +2,50 @@
 # -*- coding: utf-8 -*-
 
 """
+==============================================================================
+1. Acquisition Pipeline
+==============================================================================
+This section describes the steps required to set up the environment and run 
+the automated download script.
+
+1.1 Prerequisites
+-----------------
+The script uses the Rich library for the visual interface and Aiohttp/Aiofiles 
+for high-performance asynchronous operations.
+- Python: 3.10 or higher.
+- CDSE Account: A registration at the Copernicus Data Space Ecosystem is required.
+
+1.2 Dependency Setup
+--------------------
+# Install dependencies
+pip install requests aiohttp aiofiles rich
+
+1.3 Credentials and Variable Configuration
+-----------------------------------------
+Before running, open the satellite_downloader.py file and adjust the following 
+constants in the CONFIGURATION block:
+- USERNAME / PASSWORD: Copernicus portal credentials.
+- DATE_START / DATE_END: The desired time range for the search.
+- DOWNLOAD_DIR: The absolute path where data will be saved 
+  (Ex: /meridian/sat_download/sentinel-2/2025).
+- CONCURRENCY_LIMIT: Number of simultaneous downloads (default: 4).
+
+1.4 Error Handling and Validation
+---------------------------------
+- Download Failures: If persistent network errors or timeouts occur after the 
+  20 configured retries, the script will generate a file named 
+  FAILED_[TIMESTAMP].txt inside the download directory containing the list 
+  of paths of the files that failed.
+- Integrity Validation: The script automatically checks the file size 
+  (Content-Length) before finalizing the atomic download. If the downloaded 
+  size does not match the expected size, the .part file is discarded and 
+  the download is restarted.
+
+==============================================================================
 Satellite Imagery Downloader for Copernicus Data Space Ecosystem (CDSE).
 Optimized for high-concurrency downloads with robust error handling and 
 real-time progress monitoring.
+==============================================================================
 """
 
 import os
