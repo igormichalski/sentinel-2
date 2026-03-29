@@ -7,6 +7,14 @@ Unlike raw ESA data, this dataset went through an optimization pipeline that per
 
 ---
 
+## Products
+
+Dashboard - Link
+- Link
+Classification Model - Link
+
+---
+
 ##  Extracted Band Specifications
 The following bands were selected for download:
 
