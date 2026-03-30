@@ -12,7 +12,7 @@ Dashboard - Link
 
 Wrapper - Link
 
-Classification Model - Link
+Classification Model - [Link](https://github.com/igormichalski/gulf_ice)
 
 ---
 
