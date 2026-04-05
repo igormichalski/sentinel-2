@@ -3,7 +3,7 @@
 
 """
 ==============================================================================
-2. Data Processing Pipeline
+2. Data Processing Pipeline (gulf_pipeline.py)
 ==============================================================================
 After image acquisition, gulf_pipeline.py performs the standardization and 
 optimization of data for the Gulf of St. Lawrence.
@@ -17,7 +17,8 @@ pip install rasterio geopandas shapely numpy pandas
 
 2.2 Pipeline Configuration and Execution
 ---------------------------------------
-In the CONFIGURATION block below, adjust the following parameters before starting:
+In the CONFIGURATION block of the gulf_pipeline.py file, adjust the following 
+parameters before starting:
 - INPUT_DIR: Folder containing the original .SAFE products (downloaded by the 
   previous script).
 - OUTPUT_DIR: Location where the cropped and optimized images will be saved.
@@ -33,19 +34,21 @@ reducing data volume.
 
 New Format: GeoTIFF with Lossless Compression:
 Original images are converted from JPEG2000 (.jp2) to GeoTIFF (.tif):
-- Performance: Pixel access is optimized for block-based reading (tiled).
-- Compatibility: Standard format for libraries like PyTorch, TensorFlow, and GIS.
-- Compression: Uses Deflate algorithm with Predictor 2. This lossless 
-  compression guarantees full radiometric integrity while saving disk space.
+- Performance: Pixel access is optimized for block-based reading (tiled), 
+  enabling fast loading.
+- Compatibility: Standard format for the main computer vision libraries 
+  (PyTorch, TensorFlow) and GIS software.
+- Compression: We use the Deflate algorithm with Predictor 2. This is a lossless 
+  compression that guarantees full radiometric integrity while saving disk space.
 
 The New Metadata XML (cropped_metadata.xml):
-Since cropping changes the total image area, the pipeline generates a new 
-custom XML for each processed scene:
-- Cloud Cover (Recalculated): Cloud percentage is recalculated by analyzing the 
-  SCL (Scene Classification) band. Only pixels classified as clouds 
-  (classes 8, 9, and 10) within the Gulf mask are counted.
-- NoData Detection: Identifies empty pixels or those outside the mask geometry 
-  so ML models ignore these regions.
+Since the cropping changes the total image area, the original ESA metadata no 
+longer accurately represents the statistical reality of the scene. Therefore, 
+the pipeline generates a new custom XML for each processed scene:
+- Cloud Cover (Recalculated): The cloud percentage is recalculated by analyzing 
+  the SCL (Scene Classification) band. Only pixels classified as clouds 
+  (classes 8, 9, and 10) that are within the Gulf mask are counted.
+- NoData Detection: Identifies empty pixels or those outside the mask geometry. 
 - Real Bounding Box: Updates the extreme geographic coordinates based strictly 
   on the boundaries of the performed crop.
 
@@ -53,166 +56,255 @@ File Management:
 - Original XML: The original ESA MTD_MSIL2A.xml file is copied in its entirety 
   to the output folder to maintain historical traceability and orbital 
   parameters. It remains 100% unmodified.
-- Final Structure: The result is a "clean" dataset where each .SAFE folder 
-  contains GeoTIFF bands, the original ESA XML, and the new optimized metadata.
+- Final Structure: The result is a "clean" dataset, where each .SAFE folder 
+  contains the bands in GeoTIFF format, the original ESA XML, and the new 
+  optimized metadata XML for Gulf research.
 
 ==============================================================================
 Gulf of St. Lawrence Satellite Processing Pipeline.
-Standardization and optimization for Sentinel-2 Level-2A imagery.
+Performs automated cropping, format conversion (JP2 to GeoTIFF), 
+and metadata recalculation for Sentinel-2 Level-2A imagery.
 ==============================================================================
 """
 
 import os
 import glob
-import json
-import logging
+import shutil
+import time
+import resource
 import numpy as np
+import geopandas as gpd
 import rasterio
 from rasterio.mask import mask
-from rasterio.enums import Resampling
 import xml.etree.ElementTree as ET
-from datetime import datetime
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import shape
+from shapely.geometry import Polygon
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # ==============================================================================
-# CONFIGURATION
+# 1. CONFIGURATION & GLOBAL VARIABLES
 # ==============================================================================
-
-INPUT_DIR = "/meridian/sat_download/sentinel-2/2025"
-OUTPUT_DIR = "/meridian/sat_download/sentinel-2/2025_cropped"
-MASK_PATH = "map.geojson"
-LOG_FILE = "pipeline_processing.log"
-
-# Resolution Mapping (S2-L2A Standard)
-BANDS_CONFIG = {
-    "10m": ["B02", "B03", "B04", "B08", "WVP", "AOT"],
-    "20m": ["SCL"],
-    "60m": ["B01", "B09"]
-}
-
-# Logging Setup
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler()
-    ]
-)
+INPUT_DIR  = "/meridian/sat_download/sentinel-2/2019"
+OUTPUT_DIR = "/meridian/sat_download/sentinel-2/2019_GTIFF"
+MASK_PATH  = "/home/igor/compress/map.geojson"
 
 # ==============================================================================
-# PROCESSING FUNCTIONS
+# RESOURCE LIMITS — Shared Server Optimization
 # ==============================================================================
+MAX_WORKERS   = 4      # Maximum parallel processes
+NICE_LEVEL    = 0      # Process priority (0=normal, 19=minimum)
+SLEEP_BETWEEN = 0      # Pause between task submissions (seconds)
+MAX_RAM_GB    = 16     # RAM limit per process (GB)
 
-def load_mask(mask_path):
-    """Loads and prepares the vector mask for clipping."""
-    gdf = gpd.read_file(mask_path)
-    return gdf.geometry.values
-
-def calculate_stats(data, nodata_val):
-    """Recalculates cloud and nodata percentages for the cropped area."""
-    valid_mask = data != nodata_val
-    total_pixels = data.size
-    
-    # SCL (Scene Classification) specific cloud detection
-    # Classes 8, 9, 10 represent clouds in S2-L2A
-    cloud_pixels = np.sum((data == 8) | (data == 9) | (data == 10))
-    nodata_pixels = np.sum(data == nodata_val)
-    
-    cloud_pct = (cloud_pixels / total_pixels) * 100
-    nodata_pct = (nodata_pixels / total_pixels) * 100
-    
-    return cloud_pct, nodata_pct
-
-def process_scene(scene_path, mask_geometry):
-    """Processes a single .SAFE directory."""
-    scene_name = os.path.basename(scene_path)
-    scene_out_dir = os.path.join(OUTPUT_DIR, scene_name)
-    os.makedirs(scene_out_dir, exist_ok=True)
-    
-    logging.info(f"Processing Scene: {scene_name}")
-    
-    results = {
-        "scene": scene_name,
-        "cloud_cover": 0,
-        "nodata": 0,
-        "status": "Success"
-    }
-
-    try:
-        # 1. Locate Bands
-        for res, bands in BANDS_CONFIG.items():
-            for band in bands:
-                # Search for JP2 files in the GRANULE subfolders
-                search_pattern = os.path.join(scene_path, "GRANULE", "*", "IMG_DATA", res, f"*{band}_{res}.jp2")
-                files = glob.glob(search_pattern)
-                
-                if not files:
-                    continue
-                
-                src_path = files[0]
-                dst_path = os.path.join(scene_out_dir, f"{scene_name}_{band}_{res}.tif")
-                
-                with rasterio.open(src_path) as src:
-                    # Apply Clipping
-                    out_image, out_transform = mask(src, mask_geometry, crop=True)
-                    out_meta = src.meta.copy()
-                    
-                    # Update Metadata for GeoTIFF
-                    out_meta.update({
-                        "driver": "GTiff",
-                        "height": out_image.shape[1],
-                        "width": out_image.shape[2],
-                        "transform": out_transform,
-                        "compress": "deflate",
-                        "predictor": 2
-                    })
-                    
-                    # Recalculate stats using SCL band if available
-                    if band == "SCL":
-                        c_pct, n_pct = calculate_stats(out_image[0], out_meta['nodata'])
-                        results["cloud_cover"] = round(c_pct, 4)
-                        results["nodata"] = round(n_pct, 4)
-                    
-                    with rasterio.open(dst_path, "w", **out_meta) as dest:
-                        dest.write(out_image)
-
-        # 2. Copy Original Metadata
-        mtd_path = glob.glob(os.path.join(scene_path, "MTD_MSIL2A.xml"))
-        if mtd_path:
-            import shutil
-            shutil.copy(mtd_path[0], os.path.join(scene_out_dir, "MTD_MSIL2A.xml"))
-
-    except Exception as e:
-        logging.error(f"Error processing {scene_name}: {str(e)}")
-        results["status"] = f"Error: {str(e)}"
-
-    return results
+def set_low_priority():
+    """Sets process priority and limits RAM usage."""
+    # Reduce process priority (nice)
+    os.nice(NICE_LEVEL)
+    # Limit maximum RAM per process
+    max_bytes = MAX_RAM_GB * 1024 ** 3
+    resource.setrlimit(resource.RLIMIT_AS, (max_bytes, max_bytes))
 
 # ==============================================================================
-# MAIN EXECUTION
+# 2. HELPER FUNCTIONS
 # ==============================================================================
+def parse_ext_pos_list(coords_text):
+    """Converts ESA coordinate string to Shapely Polygon."""
+    coords = list(map(float, coords_text.split()))
+    points = [(coords[i+1], coords[i]) for i in range(0, len(coords), 2)]
+    return Polygon(points)
 
-def main():
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+def format_ext_pos_list(polygon):
+    """Converts Shapely Polygon back to ESA coordinate string format."""
+    points = list(polygon.convex_hull.exterior.coords)
+    text = " ".join([f"{lat} {lon}" for lon, lat in points])
+    return text
 
-    logging.info("Starting Gulf Pipeline...")
-    mask_geom = load_mask(MASK_PATH)
-    scenes = [f.path for f in os.scandir(INPUT_DIR) if f.is_dir() and f.name.endswith(".SAFE")]
-    
-    inventory = []
-    
-    for scene in scenes:
-        res = process_scene(scene, mask_geom)
-        inventory.append(res)
-    
-    # Export Inventory
-    df = pd.DataFrame(inventory)
-    df.to_csv(os.path.join(OUTPUT_DIR, "processing_inventory.csv"), index=False)
-    logging.info("Pipeline Execution Finished.")
+# ==============================================================================
+# 3. MAIN PROCESSING FUNCTION (1 folder per worker)
+# ==============================================================================
+def process_folder(source_folder, gulf_polygon, mask_crs, mask_json_path):
+    folder_name = os.path.basename(source_folder)
+    output_folder = os.path.join(OUTPUT_DIR, folder_name)
+    new_xml = os.path.join(output_folder, "cropped_metadata.xml")
+    original_xml = os.path.join(source_folder, "MTD_MSIL2A.xml")
 
-if __name__ == "__main__":
-    main()
+    # -------------------------------------------------
+    # 0. CHECKPOINT (Skip if already processed)
+    # -------------------------------------------------
+    if os.path.exists(output_folder):
+        if os.path.exists(new_xml):
+            try:
+                tree_new = ET.parse(new_xml)
+                root_new = tree_new.getroot()
+                if root_new.find('.//MATRIX_DIMENSION') is not None:
+                    return f"[SKIPPED] {folder_name:<65} | Already processed"
+            except Exception:
+                pass
+        shutil.rmtree(output_folder)
+
+    # -------------------------------------------------
+    # 1. NORMAL PROCESSING
+    # -------------------------------------------------
+    if not os.path.exists(original_xml):
+        return f"[ERROR]   {folder_name:<65} | Original XML not found"
+
+    tree_orig = ET.parse(original_xml)
+    root_orig = tree_orig.getroot()
+    ext_elem = root_orig.find('.//EXT_POS_LIST')
+
+    cloud_elem = root_orig.find('.//Cloud_Coverage_Assessment')
+    original_cloud_pct = float(cloud_elem.text) if cloud_elem is not None else 0.0
+
+    nodata_elem = root_orig.find('.//NODATA_PIXEL_PERCENTAGE')
+    original_nodata_pct = float(nodata_elem.text) if nodata_elem is not None else 0.0
+
+    orig_polygon = None
+    fully_inside = False
+
+    if ext_elem is not None:
+        orig_polygon = parse_ext_pos_list(ext_elem.text)
+
+        if not gulf_polygon.intersects(orig_polygon):
+            return f"[IGNORED] {folder_name:<65} | 100% OUTSIDE the Gulf"
+
+        if gulf_polygon.contains(orig_polygon):
+            fully_inside = True
+
+    os.makedirs(output_folder)
+
+    jp2_files = glob.glob(os.path.join(source_folder, "*.jp2"))
+    was_altered = not fully_inside
+
+    if was_altered:
+        gdf_mask = gpd.read_file(mask_json_path)
+        gdf_mask.set_crs(epsg=4326, allow_override=True, inplace=True)
+
+    # -------------------------------------------------
+    # 2. CONVERT TO TIFF OR CROP TO TIFF (Lossless GTiff)
+    # -------------------------------------------------
+    for jp2 in jp2_files:
+        tif_name = os.path.basename(jp2).replace(".jp2", ".tif")
+        tif_out_path = os.path.join(output_folder, tif_name)
+
+        if fully_inside:
+            with rasterio.open(jp2) as src:
+                out_image = src.read()
+                out_meta = src.meta.copy()
+                out_meta.update({
+                    "driver": "GTiff",
+                    "compress": "deflate",
+                    "predictor": 2
+                })
+                with rasterio.open(tif_out_path, "w", **out_meta) as dest:
+                    dest.write(out_image)
+        else:
+            with rasterio.open(jp2) as src:
+                mask_proj = gdf_mask.to_crs(src.crs)
+                mask_geometry = [mask_proj.geometry.union_all()]
+
+                try:
+                    out_image, out_transform = mask(src, mask_geometry, crop=False, filled=True, nodata=0)
+                except ValueError:
+                    out_image = np.zeros((src.count, src.height, src.width), dtype=src.dtypes[0])
+                    out_transform = src.transform
+
+                out_meta = src.meta.copy()
+                out_meta.update({
+                    "driver": "GTiff",
+                    "height": src.height,
+                    "width": src.width,
+                    "transform": out_transform,
+                    "compress": "deflate",
+                    "predictor": 2
+                })
+                with rasterio.open(tif_out_path, "w", **out_meta) as dest:
+                    dest.write(out_image)
+
+    # -------------------------------------------------
+    # 3. RECALCULATE CLOUDS, NODATA, AND GENERATE XML
+    # -------------------------------------------------
+    new_cloud_pct  = original_cloud_pct
+    new_nodata_pct = original_nodata_pct
+
+    if was_altered:
+        scl_files = glob.glob(os.path.join(output_folder, "*SCL_20m.tif"))
+        if scl_files:
+            with rasterio.open(scl_files[0]) as scl_src:
+                scl_data = scl_src.read(1)
+                valid_pixels = np.count_nonzero(scl_data > 0)
+                cloud_pixels = np.count_nonzero(np.isin(scl_data, [8, 9, 10]))
+                if valid_pixels > 0:
+                    new_cloud_pct = round((cloud_pixels / valid_pixels) * 100, 4)
+                new_nodata_pct = round((np.count_nonzero(scl_data == 0) / scl_data.size) * 100, 4)
+
+    shutil.copy2(original_xml, os.path.join(output_folder, os.path.basename(original_xml)))
+
+    sat_elem  = root_orig.find('.//SPACECRAFT_NAME')
+    sat_name  = sat_elem.text if sat_elem is not None else "Sentinel-2"
+    time_elem = root_orig.find('.//PRODUCT_START_TIME')
+    timestamp = time_elem.text if time_elem is not None else "Unknown"
+
+    new_coords_text = "MISSING"
+    if ext_elem is not None and was_altered and orig_polygon:
+        intersection_poly = orig_polygon.intersection(gulf_polygon)
+        if not intersection_poly.is_empty:
+            new_coords_text = format_ext_pos_list(intersection_poly)
+    elif ext_elem is not None:
+        new_coords_text = ext_elem.text.strip()
+
+    file_status = "ALTERED" if was_altered else "ORIGINAL"
+
+    with open(new_xml, 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<GULF_ST_LAWRENCE_METADATA>\n')
+        f.write(f'    <SPACECRAFT_NAME>{sat_name}</SPACECRAFT_NAME>\n')
+        f.write(f'    <PRODUCT_START_TIME>{timestamp}</PRODUCT_START_TIME>\n')
+        f.write(f'    <FILE_STATUS>{file_status}</FILE_STATUS>\n')
+        f.write(f'    <MATRIX_DIMENSION>STANDARD_SQUARE_GTIFF</MATRIX_DIMENSION>\n')
+        f.write(f'    <Cloud_Coverage_Assessment>{new_cloud_pct}</Cloud_Coverage_Assessment>\n')
+        f.write(f'    <NODATA_PIXEL_PERCENTAGE>{new_nodata_pct}</NODATA_PIXEL_PERCENTAGE>\n')
+        f.write(f'    <EXT_POS_LIST>{new_coords_text}</EXT_POS_LIST>\n')
+        f.write('</GULF_ST_LAWRENCE_METADATA>\n')
+
+    return f"[SUCCESS] {folder_name:<65} | Status: {file_status:<8} | Clouds: {new_cloud_pct:05.2f}% | NoData: {new_nodata_pct:05.2f}%"
+
+
+# ==============================================================================
+# 4. MULTIPROCESSING ENGINE
+# ==============================================================================
+if __name__ == '__main__':
+    print("🚀 Starting Gulf of St. Lawrence GTiff Pipeline...")
+    print(f"   Workers limited to {MAX_WORKERS} (shared server optimization)")
+
+    if not os.path.exists(MASK_PATH):
+        raise FileNotFoundError(f"[X] Mask not found at: {MASK_PATH}")
+
+    gdf_mask     = gpd.read_file(MASK_PATH)
+    gdf_mask.set_crs(epsg=4326, allow_override=True, inplace=True)
+    mask_crs     = gdf_mask.crs
+    gulf_polygon = gdf_mask.geometry.union_all()
+
+    safe_folders = sorted(glob.glob(os.path.join(INPUT_DIR, "*.SAFE")))
+
+    print(f"📦 Found {len(safe_folders)} folders to process.\n")
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    print("-" * 125)
+    print(f"{'LOG TYPE':<10} {'FOLDER NAME':<65} | {'DETAILS'}")
+    print("-" * 125)
+
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS,
+                               initializer=set_low_priority) as executor:
+        futures = []
+        for folder in safe_folders:
+            futures.append(executor.submit(
+                process_folder, folder, gulf_polygon, mask_crs, MASK_PATH
+            ))
+            time.sleep(SLEEP_BETWEEN)  # Submission throttle
+
+        for i, future in enumerate(as_completed(futures), 1):
+            result = future.result()
+            print(f"[{i:04d}/{len(safe_folders):04d}] {result}", flush=True)
+
+    print("-" * 125)
+    print("🎉 Processing finished!")
