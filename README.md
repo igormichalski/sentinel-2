@@ -97,9 +97,9 @@ The dataset was generated through two main steps:
 *Fill in the information below after the final pipeline run:*
 
 * **Number of Tiles:** `54`
-* **Total Scenes:** `______`
-* **Time Period:** `______` to `______`
-* **Total Disk Space:** `______ GB`
+* **Total Scenes:** `72.733`
+* **Time Period:** `14/11/2025` to `01/04/2026`
+* **Total Disk Space:** `18 TB`
 * **Compression Configuration:** `GeoTIFF (Deflate, Predictor 2)`
 
 ---
