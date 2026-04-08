@@ -46,21 +46,25 @@ Data is organized by Year and by individual `.SAFE` folders for each scene, main
 ├── gulf_catalog.csv     # Full catalog (Cloud, NoData, Tiles)
 ├── map.geojson                                # Area of interest polygon
 │
-└── [YEAR]/                                    # Ex: 2016, 2022
-    └── [SCENE_NAME].SAFE/                     # Scene folder (Ex: S2A_MSIL2A_20160106...)
-        ├── MTD_MSIL2A.xml                     # Original ESA metadata
-        ├── cropped_metadata.xml               # Post-processing metadata (Recalculated)
-        │
-        # --- GEOTIFF IMAGES (GULF CROP) ---
-        ├── [NAME]_B02_10m.tif                 # Blue Band (490nm)
-        ├── [NAME]_B03_10m.tif                 # Green Band (560nm)
-        ├── [NAME]_B04_10m.tif                 # Red Band (665nm)
-        ├── [NAME]_B08_10m.tif                 # NIR (842nm)
-        ├── [NAME]_WVP_10m.tif                 # Water Vapor
-        ├── [NAME]_AOT_10m.tif                 # Aerosol Optical Thickness
-        ├── [NAME]_SCL_20m.tif                 # Scene Classification Map
-        ├── [NAME]_B01_60m.tif                 # Coastal Aerosol
-        └── [NAME]_B09_60m.tif                 # Water Vapor
+├── [YEAR]_GTIFF/                              # e.g., 2015_GTIFF, 2022_GTIFF
+│   └── [SCENE_NAME].SAFE/                     # e.g., S2A_MSIL2A_20151207...SAFE
+│       ├── MTD_MSIL2A.xml                     # Original ESA metadata
+│       ├── cropped_metadata.xml               # Post-processing metadata
+│       │
+│       # --- GEOTIFF IMAGES ---
+│       ├── [TILE]_[DATE]_B02_10m.tif          # Blue Band (490nm)
+│       ├── [TILE]_[DATE]_B03_10m.tif          # Green Band (560nm)
+│       ├── [TILE]_[DATE]_B04_10m.tif          # Red Band (665nm)
+│       ├── [TILE]_[DATE]_B08_10m.tif          # NIR (842nm)
+│       ├── [TILE]_[DATE]_AOT_10m.tif          # Aerosol Optical Thickness
+│       ├── [TILE]_[DATE]_WVP_10m.tif          # Water Vapor
+│       ├── [TILE]_[DATE]_SCL_20m.tif          # Scene Classification Map
+│       ├── [TILE]_[DATE]_B01_60m.tif          # Coastal Aerosol
+│       └── [TILE]_[DATE]_B09_60m.tif          # Water Vapor (60m)
+│
+└── logs/                                      # Located in /meridian/sat_download/logs
+    ├── logs_cut/                              # pipeline_[YEAR].log
+    └── logs_download/                         # [YEAR]/log[YEAR].txt
 ```
 ---
 
