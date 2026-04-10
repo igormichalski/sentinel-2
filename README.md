@@ -10,7 +10,7 @@ Unlike raw ESA data, this dataset went through an optimization pipeline that per
 ## Products
 Dashboard - [Link](https://github.com/JoaoPedroRecalcatti/Dashboard_sat.git)
 
-Wrapper Class - [Link](https://github.com/JoaoPedroRecalcatti/meridian_access.git)
+Python Class - [Link](https://github.com/JoaoPedroRecalcatti/meridian_access.git)
 
 Classification Model - [Link](https://github.com/igormichalski/gulf_ice)
 
